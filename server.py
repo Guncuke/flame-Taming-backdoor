@@ -31,7 +31,6 @@ class Server(Model):
 		cluster.fit(clients_weight)
 		print(cluster.labels_)
 
-
 	# 模型聚合 fedavg
 	def model_aggregate(self, weight_accumulator):
 		for name, data in self.global_model.state_dict().items():
