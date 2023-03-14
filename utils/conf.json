@@ -1,0 +1,25 @@
+{
+	"malicious_user" :[0],
+
+	"poison_num" : 8,
+
+	"model_name" : "resnet18",
+	
+	"no_models" : 30,
+	
+	"type" : "mnist",
+	
+	"global_epochs" : 20,
+	
+	"local_epochs" : 3,
+	
+	"k" : 10,
+	
+	"batch_size" : 32,
+	
+	"lr" : 0.001,
+	
+	"momentum" : 0.0001,
+	
+	"lambda" : 0.1
+}
