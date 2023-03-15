@@ -9,11 +9,11 @@
 	
 	"type" : "mnist",
 	
-	"global_epochs" : 20,
+	"global_epochs" : 30,
 	
 	"local_epochs" : 3,
 	
-	"k" : 2,
+	"k" : 5,
 	
 	"batch_size" : 32,
 	
@@ -21,5 +21,5 @@
 	
 	"momentum" : 0.0001,
 	
-	"lambda" : 0.5
+	"lambda" : 0.2
 }

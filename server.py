@@ -30,32 +30,36 @@ class Server(Model):
 
 		# 0. 数据预处理，将clients_weight展开成二维tensor, 方便聚类计算
 		clients_weight_ = []
+		clients_weight_total = []
 		for data in clients_weight:
 			client_weight = torch.tensor([])
+			client_weight_total = torch.tensor([])
 
 			for name, params in self.global_model.state_dict().items():
 				client_weight = torch.cat((client_weight, data[name].reshape(-1).cpu()))
+				client_weight_total = torch.cat((client_weight, (data[name] + self.global_model.state_dict()[name]).reshape(-1).cpu()))
 
 			clients_weight_.append(client_weight)
+			clients_weight_total.append(client_weight_total)
 
 		# 获得了每个客户端模型的参数，矩阵大小为(客户端数, 参数个数)
 		clients_weight_ = torch.stack(clients_weight_)
+		clients_weight_total = torch.stack(clients_weight_total)
+
 
 		# 1. HDBSCAN余弦相似度聚类
-		# num_clients = clients_weight.shape[0]
-		# clients_weight = clients_weight.double()
-		# cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=2, min_samples=1)
-		# L2 = torch.norm(clients_weight, p=2, dim=1, keepdim=True)
-		# clients_weight = clients_weight.div(L2)
-		# cluster.fit(clients_weight)
+		# num_clients = clients_weight_total.shape[0]
+		# clients_weight_total = clients_weight_total.double()
+		# cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2, min_samples=1)
+		# # L2 = torch.norm(clients_weight, p=2, dim=1, keepdim=True)
+		# # clients_weight = clients_weight.div(L2)
+		# cluster.fit(clients_weight_total)
 		# print(cluster.labels_)
 
 		# 2. 范数中值裁剪
 		euclidean = (clients_weight_**2).sum(1).sqrt()
 		med = euclidean.median()
-
 		for i, data in enumerate(clients_weight):
-
 			gama = med.div(euclidean[i])
 			if gama > 1:
 				gama = 1

@@ -36,7 +36,7 @@ if __name__ == '__main__':
 			malicious = True
 			# 加入后门数据
 			if conf['type'] == 'mnist' or conf['type'] == 'fmnist': 
-				for i in range(c * data_len, c * data_len + data_len // 11):
+				for i in range(c * data_len, c * data_len + data_len // 5):
 					train_datasets.data[i][3:5, 3:5].fill_(255)
 					train_datasets.targets[i].copy_(torch.tensor(conf['poison_num']))
 
