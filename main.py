@@ -62,37 +62,26 @@ if __name__ == '__main__':
 		# 为选中的参与者分配新的模型权重
 		server.model_distribution(candidates)
 		
-		weight_accumulator = {}
-		
-		for name, params in server.global_model.state_dict().items():
-			weight_accumulator[name] = torch.zeros_like(params)
-		
-		# 客户端训练
+		# 客户端训练 clients_weight记录每个客户端的模型参数
 		clients_weight = []
 		for c in candidates:
 
-			client_weight = torch.tensor([])
+			client_weight = {}
 
 			# 本轮有恶意用户
 			if c.client_id in conf['malicious_user']:
 				round_poison.append(e)
 			
 			diff = c.local_train()
-			# 计算每一层参数的差值
+			# 将每个客户端的差值保存，用于之后的防御算法处理
 			for name, params in server.global_model.state_dict().items():
-				# 暂时先不筛选
-				weight_accumulator[name].add_(diff[name])
-				# 只加入全连接层
-				#if name == 'fc.weight' or name == 'fc.bias':
-				client_weight = torch.cat((client_weight, diff[name].reshape(-1).cpu()))
+
+				client_weight[name] = diff[name]
 
 			clients_weight.append(client_weight)
-		
-		# 获得了每个客户端模型的参数，矩阵大小为(客户端数, 参数个数)
-		clients_weight = torch.stack(clients_weight)
 
-		# 服务器筛选良性客户端
-		server.model_sift(clients_weight)
+		# 服务器筛选良性客户端，并将聚合后的计算结果返回
+		weight_accumulator = server.model_sift(clients_weight)
 
 		# TODO：筛选完后再加入weight_accumulator
 		# 模型聚合
@@ -102,7 +91,6 @@ if __name__ == '__main__':
 		accuracy.append(acc)
 		accuracy_poison.append(acc_poison)
 		losses.append(loss)
-		
 
 		print("Epoch %d, acc: %f, loss: %f, acc_on_poison: %f\n" % (e, acc, loss, acc_poison))
 	

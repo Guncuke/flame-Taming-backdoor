@@ -18,17 +18,16 @@ class Client(object):
 		self.train_loader = torch.utils.data.DataLoader(self.train_dataset, batch_size=conf["batch_size"])
 
 	# 模型投毒(无范数裁剪)
-	def model_poison_without_clip(self, diff):
+	def model_poison(self, diff):
+
 		for name, data in self.local_model.state_dict().items():
+
 			num = torch.tensor(self.conf['lambda'], dtype=torch.float32)
+
 			if diff[name].type() != num.type():
 				diff[name] = diff[name].div(num).to(diff[name].dtype)
 			else:
 				diff[name].div_(num)
-
-	# 模型投毒(范数裁剪)
-	def model_poison_with_clip(self):
-		pass
 
 	def local_train(self):
 
@@ -40,9 +39,6 @@ class Client(object):
 		optimizer = torch.optim.SGD(self.local_model.parameters(), lr=self.conf['lr'], momentum=self.conf['momentum'])
 
 		epoch = self.conf['local_epochs']
-
-		if self.is_poison:
-			epoch *= 2
 
 		self.local_model.train()
 		for _ in range(epoch):
@@ -67,10 +63,11 @@ class Client(object):
 			print('')
 		
 		diff = dict()
+
 		for name, data in self.local_model.state_dict().items():
 			diff[name] = (data - pre_model[name])
 
 		if self.is_poison:
-			self.model_poison_without_clip(diff)
+			self.model_poison(diff)
 
 		return diff
