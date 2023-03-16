@@ -66,19 +66,13 @@ if __name__ == '__main__':
 		clients_weight = []
 		for c in candidates:
 
-			client_weight = {}
-
 			# 本轮有恶意用户
 			if c.client_id in conf['malicious_user']:
 				round_poison.append(e)
 			
 			diff = c.local_train()
-			# 将每个客户端的差值保存，用于之后的防御算法处理
-			for name, params in server.global_model.state_dict().items():
 
-				client_weight[name] = diff[name]
-
-			clients_weight.append(client_weight)
+			clients_weight.append(diff)
 
 		# 服务器筛选良性客户端，并将聚合后的计算结果返回
 		weight_accumulator = server.model_sift(clients_weight)
@@ -93,5 +87,5 @@ if __name__ == '__main__':
 		losses.append(loss)
 
 		print("Epoch %d, acc: %f, loss: %f, acc_on_poison: %f\n" % (e, acc, loss, acc_poison))
-	
+
 	plot_E.plot_loss_accuracy(losses, accuracy, round_poison, accuracy_poison)
