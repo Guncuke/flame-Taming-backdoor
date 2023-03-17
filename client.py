@@ -1,5 +1,5 @@
 import torch
-
+import random
 
 class Client(object):
 
@@ -44,6 +44,12 @@ class Client(object):
 		for _ in range(epoch):
 			for _, batch in enumerate(self.train_loader):
 				data, target = batch
+
+				if self.is_poison:
+					poison_data = random.sample(range(len(data)), len(data)//10)
+					for index in poison_data:
+						data[index][0][3:5, 3:5].fill_(2.821)
+						target[index].copy_(torch.tensor(self.conf['poison_num']))
 				
 				if torch.cuda.is_available():
 					data = data.cuda()
@@ -69,5 +75,7 @@ class Client(object):
 
 		if self.is_poison:
 			self.model_poison(diff)
+
+		self.is_poison = False
 
 		return diff

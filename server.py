@@ -48,13 +48,13 @@ class Server(Model):
 
 
 		# 1. HDBSCAN余弦相似度聚类
-		# num_clients = clients_weight_total.shape[0]
-		# clients_weight_total = clients_weight_total.double()
-		# cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2, min_samples=1)
-		# # L2 = torch.norm(clients_weight, p=2, dim=1, keepdim=True)
-		# # clients_weight = clients_weight.div(L2)
-		# cluster.fit(clients_weight_total)
-		# print(cluster.labels_)
+		num_clients = clients_weight_total.shape[0]
+		clients_weight_total = clients_weight_total.double()
+		cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2, min_samples=1)
+		# L2 = torch.norm(clients_weight, p=2, dim=1, keepdim=True)
+		# clients_weight = clients_weight.div(L2)
+		cluster.fit(clients_weight_total)
+		print(cluster.labels_)
 
 		# 2. 范数中值裁剪
 		euclidean = (clients_weight_**2).sum(1).sqrt()
