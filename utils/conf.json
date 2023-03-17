@@ -1,11 +1,11 @@
 {
-	"malicious_round" :[5, 10, 18],
+	"malicious_round" :[3, 10, 18],
 
 	"poison_num" : 8,
 
 	"model_name" : "resnet18",
 	
-	"no_models" : 30,
+	"no_models" : 20,
 	
 	"type" : "mnist",
 	
@@ -13,7 +13,7 @@
 	
 	"local_epochs" : 3,
 	
-	"k" : 30,
+	"k" : 20,
 	
 	"batch_size" : 32,
 	
@@ -21,5 +21,5 @@
 	
 	"momentum" : 0.0001,
 	
-	"lambda" : 0.5
+	"lambda" : 0.05
 }

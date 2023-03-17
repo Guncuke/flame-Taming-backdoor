@@ -35,7 +35,7 @@ class Server(Model):
 			client_weight = torch.tensor([])
 			client_weight_total = torch.tensor([])
 
-			for name, params in self.global_model.state_dict().items():
+			for name, _ in self.global_model.state_dict().items():
 				client_weight = torch.cat((client_weight, data[name].reshape(-1).cpu()))
 				client_weight_total = torch.cat((client_weight, (data[name] + self.global_model.state_dict()[name]).reshape(-1).cpu()))
 
@@ -46,15 +46,16 @@ class Server(Model):
 		clients_weight_ = torch.stack(clients_weight_)
 		clients_weight_total = torch.stack(clients_weight_total)
 
-
 		# 1. HDBSCAN余弦相似度聚类
 		num_clients = clients_weight_total.shape[0]
-		clients_weight_total = clients_weight_total.double()
-		cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2, min_samples=1)
-		# L2 = torch.norm(clients_weight, p=2, dim=1, keepdim=True)
-		# clients_weight = clients_weight.div(L2)
-		cluster.fit(clients_weight_total)
-		print(cluster.labels_)
+		# clients_weight_total = clients_weight_total.double()
+		# cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2, min_samples=1)
+		#
+		# # L2 = torch.norm(clients_weight_total, p=2, dim=1, keepdim=True)
+		# # clients_weight_total = clients_weight_total.div(L2)
+		# # cluster = hdbscan.HDBSCAN(min_cluster_size=num_clients//2, min_samples=1)
+		# cluster.fit(clients_weight_total)
+		# print(cluster.labels_)
 
 		# 2. 范数中值裁剪
 		euclidean = (clients_weight_**2).sum(1).sqrt()
@@ -64,7 +65,7 @@ class Server(Model):
 			if gama > 1:
 				gama = 1
 
-			for name, params in self.global_model.state_dict().items():
+			for name, _ in self.global_model.state_dict().items():
 				data[name] = (data[name] * gama).to(data[name].dtype)
 
 		# 3. 聚合
@@ -72,9 +73,16 @@ class Server(Model):
 			for name, params in self.global_model.state_dict().items():
 				weight_accumulator[name].add_(data[name])
 
-		# 4. TODO:聚合模型添加噪声
+		self.model_aggregate(weight_accumulator)
 
-		return weight_accumulator
+		# 4. TODO:聚合模型添加噪声 no test yet!
+		epsilon = 0.01
+		delta = 1/num_clients
+		sigma = med.div(epsilon) * torch.sqrt(2 * torch.log(torch.tensor(1.25/delta)))
+		# print(sigma)
+
+		for name, data in self.global_model.state_dict().items():
+			data.add_(torch.normal(0, sigma).to(data.dtype))
 
 	# 模型聚合
 	def model_aggregate(self, weight_accumulator):

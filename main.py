@@ -73,11 +73,7 @@ if __name__ == '__main__':
 			clients_weight.append(diff)
 
 		# 服务器筛选良性客户端，并将聚合后的计算结果返回
-		weight_accumulator = server.model_sift(clients_weight)
-
-		# TODO：筛选完后再加入weight_accumulator
-		# 模型聚合
-		server.model_aggregate(weight_accumulator)
+		server.model_sift(clients_weight)
 
 		acc, acc_poison, loss = server.model_eval()
 		accuracy.append(acc)
