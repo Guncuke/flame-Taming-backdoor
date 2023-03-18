@@ -1,5 +1,5 @@
 {
-	"malicious_round" :[3, 10, 18],
+	"malicious_round" :[5, 10, 18],
 
 	"poison_num" : 8,
 

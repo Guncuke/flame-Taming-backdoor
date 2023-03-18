@@ -1,6 +1,7 @@
 import torch
 import random
 
+
 class Client(object):
 
 	def __init__(self, conf, model, train_dataset, id=-1, is_poison=False):
@@ -20,14 +21,11 @@ class Client(object):
 	# 模型投毒(无范数裁剪)
 	def model_poison(self, diff):
 
-		for name, data in self.local_model.state_dict().items():
+		for name, data in diff.items():
 
 			num = torch.tensor(self.conf['lambda'], dtype=torch.float32)
 
-			if diff[name].type() != num.type():
-				diff[name] = diff[name].div(num).to(diff[name].dtype)
-			else:
-				diff[name].div_(num)
+			data.data = data.data.div(num).to(data.data.dtype)
 
 	def local_train(self):
 
