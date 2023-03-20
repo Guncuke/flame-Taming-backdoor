@@ -46,16 +46,16 @@ class Server(Model):
 		# 获得了每个客户端模型的参数，矩阵大小为(客户端数, 参数个数)
 		clients_weight_ = torch.stack(clients_weight_)
 		clients_weight_total = torch.stack(clients_weight_total)
-		# 1. HDBSCAN余弦相似度聚类
+		# # 1. HDBSCAN余弦相似度聚类
 		num_clients = clients_weight_total.shape[0]
-		clients_weight_total = clients_weight_total.double()
-		cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2, min_samples=1)
+		# clients_weight_total = clients_weight_total.double()
+		# cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2, min_samples=1)
 
 		# L2 = torch.norm(clients_weight_total, p=2, dim=1, keepdim=True)
 		# clients_weight_total = clients_weight_total.div(L2)
 		# cluster = hdbscan.HDBSCAN(min_cluster_size=num_clients//2, min_samples=1)
-		cluster.fit(clients_weight_total)
-		print(cluster.labels_)
+		# cluster.fit(clients_weight_total)
+		# print(cluster.labels_)
 
 		# 2. 范数中值裁剪
 		euclidean = (clients_weight_**2).sum(1).sqrt()
@@ -76,13 +76,21 @@ class Server(Model):
 		self.model_aggregate(weight_accumulator)
 
 		# # 4. TODO:聚合模型添加噪声 no test yet!
-		# epsilon = 0.01
-		# delta = 1/num_clients
+		# epsilon = 3705
+		# delta = 1 / num_clients
 		# sigma = med.div(epsilon) * torch.sqrt(2 * torch.log(torch.tensor(1.25/delta)))
-		# # print(sigma)
+		# print(sigma)
+		# print(torch.normal(0, sigma))
+
+		# lamda = 0.00023
 		#
-		# for name, data in self.global_model.state_dict().items():
-		# 	data.add_(torch.normal(0, sigma).to(data.dtype))
+		# for name, param in self.global_model.named_parameters():
+		# 	if 'bias' in name or 'bn' in name:
+		# 		# 不对偏置和BatchNorm的参数添加噪声
+		# 		continue
+		# 	std = lamda * param.data.norm(2)
+		# 	noise = torch.normal(0, std, size=param.size()).cuda()
+		# 	param.data.add_(noise)
 
 	# 模型聚合
 	def model_aggregate(self, weight_accumulator):

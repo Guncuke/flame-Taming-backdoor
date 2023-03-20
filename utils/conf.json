@@ -1,5 +1,5 @@
 {
-	"malicious_round" :[5, 10, 18],
+	"malicious_round" :[8, 15, 18],
 
 	"poison_num" : 8,
 
@@ -13,7 +13,7 @@
 	
 	"local_epochs" : 3,
 	
-	"k" : 20,
+	"k" : 2,
 	
 	"batch_size" : 32,
 	
@@ -21,5 +21,5 @@
 	
 	"momentum" : 0.0001,
 	
-	"lambda" : 0.05
+	"lambda" : 0.5
 }

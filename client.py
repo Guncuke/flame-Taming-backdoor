@@ -44,7 +44,7 @@ class Client(object):
 				data, target = batch
 
 				if self.is_poison:
-					poison_data = random.sample(range(len(data)), len(data)//10)
+					poison_data = random.sample(range(len(data)), len(data)//11)
 					for index in poison_data:
 						data[index][0][3:5, 3:5].fill_(2.821)
 						target[index].copy_(torch.tensor(self.conf['poison_num']))
