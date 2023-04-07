@@ -1,5 +1,6 @@
 import torch
 from models import Model
+import pickle
 import hdbscan
 
 
@@ -46,16 +47,17 @@ class Server(Model):
 		# 获得了每个客户端模型的参数，矩阵大小为(客户端数, 参数个数)
 		clients_weight_ = torch.stack(clients_weight_)
 		clients_weight_total = torch.stack(clients_weight_total)
+		torch.save(clients_weight_total, 'nopoison.pt')
 		# # 1. HDBSCAN余弦相似度聚类
 		num_clients = clients_weight_total.shape[0]
-		# clients_weight_total = clients_weight_total.double()
-		# cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2, min_samples=1)
+		clients_weight_total = clients_weight_total.double()
+		cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2+1, min_samples=1,allow_single_cluster=True)
 
 		# L2 = torch.norm(clients_weight_total, p=2, dim=1, keepdim=True)
 		# clients_weight_total = clients_weight_total.div(L2)
 		# cluster = hdbscan.HDBSCAN(min_cluster_size=num_clients//2, min_samples=1)
-		# cluster.fit(clients_weight_total)
-		# print(cluster.labels_)
+		cluster.fit(clients_weight_total)
+		print(cluster.labels_)
 
 		# 2. 范数中值裁剪
 		euclidean = (clients_weight_**2).sum(1).sqrt()
@@ -82,13 +84,13 @@ class Server(Model):
 		# print(sigma)
 		# print(torch.normal(0, sigma))
 
-		lamda = 0.00023
+		lamda = 0.01
 
 		for name, param in self.global_model.named_parameters():
 			if 'bias' in name or 'bn' in name:
 				# 不对偏置和BatchNorm的参数添加噪声
 				continue
-			std = lamda * param.data.norm(2)
+			std = lamda * param.data.std()
 			noise = torch.normal(0, std, size=param.size()).cuda()
 			param.data.add_(noise)
 
@@ -137,17 +139,18 @@ class Server(Model):
 			pred_poison = output_poison.data.max(1)[1]  # 在后门图片上的预测值
 
 			correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
-			correct_poison += pred_poison.eq(target.data.view_as(pred_poison)).cpu().sum().item()
+			# correct_poison += pred_poison.eq(target.data.view_as(pred_poison)).cpu().sum().item()
 
 			# 要算在后门图片上的正确率，那原来就是后门标签的数据肯定不能算进来，需要去掉
 			# 就比如图片标签本来就是8，而后门攻击目标也是8，如果预测出来是8这个肯定不能算入后门攻击成功
 			for i in range(data.size()[0]):
-				if pred_poison[i] == self.conf['poison_num'] and target[i] == self.conf['poison_num']:
+				if pred_poison[i] == self.conf['poison_num'] and target[i] != self.conf['poison_num']:
 					total_poison_count += 1
 
-		correct_poison -= total_poison_count
+		# correct_poison -= total_poison_count
+		correct_poison = total_poison_count
 		acc = 100.0 * (float(correct) / float(dataset_size))
-		acc_poison = 100.0 * (float(correct_poison) / (float(dataset_size) - total_poison_count))
+		acc_poison = 100.0 * (float(correct_poison) / float(dataset_size))
 
 		total_l = total_loss / dataset_size
 

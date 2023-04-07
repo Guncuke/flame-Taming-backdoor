@@ -1,5 +1,7 @@
 {
-	"malicious_round" :[8, 15, 18],
+	"malicious_round" :[0,1],
+
+	"malicious_num" : 2,
 
 	"poison_num" : 8,
 
@@ -9,11 +11,11 @@
 	
 	"type" : "mnist",
 	
-	"global_epochs" : 20,
+	"global_epochs" : 2,
 	
 	"local_epochs" : 3,
 	
-	"k" : 2,
+	"k" : 20,
 	
 	"batch_size" : 32,
 	
@@ -21,5 +23,5 @@
 	
 	"momentum" : 0.0001,
 	
-	"lambda" : 0.5
+	"lambda" : 0.05
 }

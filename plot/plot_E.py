@@ -11,7 +11,7 @@ def plot_loss_accuracy(loss, acc, round, acc_poison):
     # 打印输出损失值
     plt.subplot(1, 2, 1)
     plt.plot(loss, color='blue')
-    plt.xticks(range(len(loss)))
+    # plt.xticks(range(len(loss)))
     for x in round:
         plt.axvline(x, ymin=0, ymax=100, color='red', linestyle='dashed')
     plt.title('交叉熵损失')
@@ -21,7 +21,7 @@ def plot_loss_accuracy(loss, acc, round, acc_poison):
     plt.subplot(1, 2, 2)
     plt.plot(acc, color='orange', label='主任务正确率', linestyle='dashdot')
     plt.plot(acc_poison, color='green', label='后门正确率')
-    plt.xticks(range(len(acc)))
+    # plt.xticks(range(len(acc)))
     for x in round:
         plt.axvline(x, ymin=0, ymax=100, color='red', linestyle='dashed')
     plt.title('正确率')

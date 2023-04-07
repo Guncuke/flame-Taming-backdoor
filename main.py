@@ -57,7 +57,7 @@ if __name__ == '__main__':
 		candidates = random.sample(clients, conf["k"])
 
 		if e in conf['malicious_round']:
-			malicious_candidates = random.sample(candidates, 1)
+			malicious_candidates = random.sample(candidates, conf['malicious_num'])
 			for malicious_candidate in malicious_candidates:
 				malicious_candidate.is_poison = True
 

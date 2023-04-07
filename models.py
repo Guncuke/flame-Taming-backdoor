@@ -16,6 +16,7 @@ class Model:
 				model.conv1 = torch.nn.Conv2d(1, 64, 3, stride=1, padding=1, bias=False)
 				num_ftrs = model.fc.in_features
 				model.fc = nn.Linear(num_ftrs, 10)
+				model.load_state_dict(torch.load('./data/resnet18.pkl'))
 			elif conf['type'] == 'cifar':
 				model.conv1 = nn.Conv2d(3, 64, 3, stride=1, padding=1, bias=False)  # 首层改成3x3卷积核
 				model.maxpool = nn.MaxPool2d(1, 1, 0)  # 通过1x1的池化核让池化层失效
