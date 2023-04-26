@@ -1,21 +1,25 @@
 {
-	"malicious_round" :[0,1],
+	"malicious_round" :[4, 19, 34, 49],
 
-	"malicious_num" : 2,
+	"defense": "krum",
+
+	"malicious_num" : 4,
 
 	"poison_num" : 8,
 
 	"model_name" : "resnet18",
+
+	"data_distribution" : "iid",
 	
-	"no_models" : 20,
+	"no_models" : 10,
 	
-	"type" : "mnist",
+	"type" : "fmnist",
 	
-	"global_epochs" : 2,
+	"global_epochs" : 51,
 	
 	"local_epochs" : 3,
 	
-	"k" : 20,
+	"k" : 10,
 	
 	"batch_size" : 32,
 	
@@ -23,5 +27,5 @@
 	
 	"momentum" : 0.0001,
 	
-	"lambda" : 0.05
+	"lambda" : 0.1
 }

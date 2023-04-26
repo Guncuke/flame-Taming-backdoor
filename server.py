@@ -1,6 +1,5 @@
 import torch
 from models import Model
-import pickle
 import hdbscan
 
 
@@ -23,7 +22,7 @@ class Server(Model):
 				c.local_model.state_dict()[name].copy_(param.clone())
 		
 	# TODO: 在聚合前，对客户端提交上来的模型参数进行筛选
-	def model_sift(self, clients_weight):
+	def model_sift(self, round, clients_weight, all_candidates, true_bad, true_good):
 		# 用来存储筛选后模型参数和
 		weight_accumulator = {}
 		for name, params in self.global_model.state_dict().items():
@@ -47,58 +46,117 @@ class Server(Model):
 		# 获得了每个客户端模型的参数，矩阵大小为(客户端数, 参数个数)
 		clients_weight_ = torch.stack(clients_weight_)
 		clients_weight_total = torch.stack(clients_weight_total)
-		torch.save(clients_weight_total, 'nopoison.pt')
-		# # 1. HDBSCAN余弦相似度聚类
 		num_clients = clients_weight_total.shape[0]
-		clients_weight_total = clients_weight_total.double()
-		cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2+1, min_samples=1,allow_single_cluster=True)
-
-		# L2 = torch.norm(clients_weight_total, p=2, dim=1, keepdim=True)
-		# clients_weight_total = clients_weight_total.div(L2)
-		# cluster = hdbscan.HDBSCAN(min_cluster_size=num_clients//2, min_samples=1)
-		cluster.fit(clients_weight_total)
-		print(cluster.labels_)
-
-		# 2. 范数中值裁剪
-		euclidean = (clients_weight_**2).sum(1).sqrt()
+		euclidean = (clients_weight_ ** 2).sum(1).sqrt()
 		med = euclidean.median()
-		for i, data in enumerate(clients_weight):
-			gama = med.div(euclidean[i])
-			if gama > 1:
-				gama = 1
+		tpr, tnr = 0, 0
 
-			for name, params in data.items():
-				params.data = (params.data * gama).to(params.data.dtype)
 
+		if self.conf['defense'] == 'flame':
+
+			# 1. HDBSCAN余弦相似度聚类
+			clients_weight_total = clients_weight_total.double()
+			cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2+1, min_samples=1,allow_single_cluster=True)
+
+			# L2 = torch.norm(clients_weight_total, p=2, dim=1, keepdim=True)
+			# clients_weight_total = clients_weight_total.div(L2)
+			# cluster = hdbscan.HDBSCAN(min_cluster_size=num_clients//2+1, min_samples=1, allow_single_cluster=True)
+
+			cluster.fit(clients_weight_total)
+			predict_good = []
+			predict_bad = []
+			for i, j in enumerate(cluster.labels_):
+				if j == 0:
+					predict_good.append(all_candidates[i])
+				else:
+					predict_bad.append(all_candidates[i])
+
+			predict_good = set(predict_good)
+			predict_bad = set(predict_bad)
+			true_bad = set(true_bad)
+			true_good = set(true_good)
+			tpr = len(true_good & predict_good) / len(predict_good)
+			tnr = len(true_bad & predict_bad) / len(predict_bad)
+
+			# 2. 范数中值裁剪
+			for i, data in enumerate(clients_weight):
+				gama = med.div(euclidean[i])
+				if gama > 1:
+					gama = 1
+
+				for name, params in data.items():
+					params.data = (params.data * gama).to(params.data.dtype)
+
+		elif self.conf['defense'] == 'krum':
+			# 记录距离与得分
+			number = 6
+			if round == 4:
+				number = 7
+			dis = torch.zeros(num_clients, num_clients)
+			score = torch.zeros(num_clients)
+			for i in range(num_clients):
+				for j in range(i+1, num_clients):
+					dis[i][j] = torch.norm(clients_weight_total[i] - clients_weight_total[j], p=2)
+					dis[j][i] = dis[i][j]
+
+			# 获取最近的6个模型参数，包括自己
+			for i, di in enumerate(dis):
+				values, _ = torch.topk(di, k=number, largest=False)
+				score[i] = values.sum()
+
+			# 获得得分最低的6个模型参数
+			_, indices = torch.topk(score, k=number, largest=False)
+			print(indices)
+
+		else:
+			for i, data in enumerate(clients_weight):
+				gama = med.div(euclidean[i])
+				if gama > 1:
+					gama = 1
+
+				for name, params in data.items():
+					params.data = (params.data * gama).to(params.data.dtype)
 		# 3. 聚合
-		for data in clients_weight:
-			for name, params in data.items():
-				weight_accumulator[name].add_(params)
+		num_in = 0
+		for i, data in enumerate(clients_weight):
+			if self.conf['defense'] == "flame":
+				if cluster.labels_[i] == 0:
+					num_in += 1
+					for name, params in data.items():
+						weight_accumulator[name].add_(params)
 
-		self.model_aggregate(weight_accumulator)
+			elif self.conf['defense'] == "krum":
+				if i in indices:
+					num_in += 1
+					for name, params in data.items():
+						weight_accumulator[name].add_(params)
 
-		# # 4. 聚合模型添加噪声
-		# epsilon = 3705
-		# delta = 1 / num_clients
-		# sigma = med.div(epsilon) * torch.sqrt(2 * torch.log(torch.tensor(1.25/delta)))
-		# print(sigma)
-		# print(torch.normal(0, sigma))
+			else:
+				num_in += 1
+				for name, params in data.items():
+					weight_accumulator[name].add_(params)
 
-		lamda = 0.01
+		self.model_aggregate(weight_accumulator, num_in)
 
-		for name, param in self.global_model.named_parameters():
-			if 'bias' in name or 'bn' in name:
-				# 不对偏置和BatchNorm的参数添加噪声
-				continue
-			std = lamda * param.data.std()
-			noise = torch.normal(0, std, size=param.size()).cuda()
-			param.data.add_(noise)
+		# 4. 聚合模型添加噪声
+
+		if self.conf['defense'] == 'flame' or self.conf['defense'] == 'canyou':
+			lamda = 0.000012
+			for name, param in self.global_model.named_parameters():
+				if 'bias' in name or 'bn' in name:
+					# 不对偏置和BatchNorm的参数添加噪声
+					continue
+				std = lamda * med * param.data.std()
+				noise = torch.normal(0, std, size=param.size()).cuda()
+				param.data.add_(noise)
+
+		return tpr, tnr
 
 	# 模型聚合
-	def model_aggregate(self, weight_accumulator):
+	def model_aggregate(self, weight_accumulator, num):
 		for name, data in self.global_model.state_dict().items():
 			
-			update_per_layer = weight_accumulator[name] * self.conf["lambda"]
+			update_per_layer = weight_accumulator[name] / num
 
 			if data.type() != update_per_layer.type():
 				data.add_(update_per_layer.to(torch.int64))
@@ -123,7 +181,14 @@ class Server(Model):
 			poison_data = data.clone()
 
 			for i, image in enumerate(poison_data):
-				image[0][3:5, 3:5] = 2.821
+				if self.conf["type"] == 'mnist':
+					image[0][3:5, 3:5] = 2.821
+				elif self.conf["type"] == "fmnist":
+					image[0][3:5, 3:5] = 2.028
+				else:
+					image[0][3:7, 3:7] = 2.514
+					image[1][3:7, 3:7] = 2.597
+					image[2][3:7, 3:7] = 2.754
 			
 			if torch.cuda.is_available():
 				data = data.cuda()

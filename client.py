@@ -27,14 +27,14 @@ class Client(object):
 
 			data.data = data.data.div(num).to(data.data.dtype)
 
-	def local_train(self):
+	def local_train(self, lr):
 
 		# 记录下训练前的模型参数
 		pre_model = {}
 		for name, param in self.local_model.state_dict().items():
 			pre_model[name] = param.clone()
 
-		optimizer = torch.optim.SGD(self.local_model.parameters(), lr=self.conf['lr'], momentum=self.conf['momentum'])
+		optimizer = torch.optim.SGD(self.local_model.parameters(), lr=lr, momentum=self.conf['momentum'])
 
 		epoch = self.conf['local_epochs']
 
@@ -46,7 +46,14 @@ class Client(object):
 				if self.is_poison:
 					poison_data = random.sample(range(len(data)), len(data)//11)
 					for index in poison_data:
-						data[index][0][3:5, 3:5].fill_(2.821)
+						if self.conf["type"] == 'mnist':
+							data[index][0][3:5, 3:5].fill_(2.821)
+						elif self.conf["type"] == "fmnist":
+							data[index][0][3:5, 3:5].fill_(2.028)
+						else:
+							data[index][0][3:7, 3:7].fill_(2.514)
+							data[index][1][3:7, 3:7].fill_(2.597)
+							data[index][2][3:7, 3:7].fill_(2.754)
 						target[index].copy_(torch.tensor(self.conf['poison_num']))
 				
 				if torch.cuda.is_available():
@@ -71,8 +78,8 @@ class Client(object):
 		for name, data in self.local_model.state_dict().items():
 			diff[name] = (data - pre_model[name])
 
-		if self.is_poison:
-			self.model_poison(diff)
+		# if self.is_poison:
+		# 	self.model_poison(diff)
 
 		self.is_poison = False
 
