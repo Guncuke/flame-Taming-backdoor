@@ -120,16 +120,16 @@ if __name__ == '__main__':
 
     # data_mnist_1 = torch.load('mnist_1_defense2.pth')
     # data_mnist_4 = torch.load('mnist_4_defense_2.pth')
-    # data_fmnist_1 = torch.load('fmnist_1.pth')
+    # data_fmnist_1 = torch.load('fmnist_1_defense2.pth')
     # data_fmnist_4 = torch.load('fmnist_4_defense2.pth')
-    # data_cifar_1 = torch.load('cifar_1.pth')
-    # data_cifar_4 = torch.load('cifar_4.pth')
+    # data_cifar_1 = torch.load('cifar_1_defense2.pth')
+    # data_cifar_4 = torch.load('cifar_4_defense2.pth')
 
-    data_mnist_4 = torch.load('mnist_4_defense.pth')
-    data_mnist_4_2 = torch.load('mnist_4_defense2.pth')
-    data_mnist_4_3 = torch.load('mnist_4_defense3.pth')
+    data_mnist_4 = torch.load('cifar_1_defense2.pth')
+    data_mnist_4_2 = torch.load('cifar_4_defense2.pth')
+    # data_mnist_4_3 = torch.load('mnist_4_defense3.pth')
 
-    plot_attack('', [4, 19, 34, 49], data_mnist_4['acc_poison'], data_mnist_4_2['acc_poison'],data_mnist_4_3['acc_poison'])
+    # plot_attack('', [4, 19, 34, 49], data_mnist_4['acc_poison'], data_mnist_4_2['acc_poison'],data_mnist_4_3['acc_poison'])
 
     # plot_accuracy('C I F A R - 1 0', data_cifar_4['acc'], [4, 19, 34, 49], data_cifar_4['acc_poison'], data_cifar_1['acc_poison'])
     # plot_accuracy('M N I S T', data_mnist_4['acc'], [4, 19, 34, 49], data_mnist_4['acc_poison'], data_mnist_1['acc_poison'])
@@ -137,4 +137,3 @@ if __name__ == '__main__':
 
     print(data_mnist_4['acc'][49], data_mnist_4['acc_poison'][49])
     print(data_mnist_4_2['acc'][49], data_mnist_4_2['acc_poison'][49])
-    print(data_mnist_4_3['acc'][49], data_mnist_4_3['acc_poison'][49])

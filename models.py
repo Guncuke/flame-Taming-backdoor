@@ -22,7 +22,7 @@ class Model:
 				model.maxpool = nn.MaxPool2d(1, 1, 0)  # 通过1x1的池化核让池化层失效
 				num_ftrs = model.fc.in_features
 				model.fc = nn.Linear(num_ftrs, 10)
-				model.load_state_dict(torch.load('./data/cifar10.pkl'))
+				# model.load_state_dict(torch.load('./data/cifar10.pkl'))
 
 		elif name == 'logistic':
 			class Model(nn.Module):

@@ -16,7 +16,7 @@ class Client(object):
 
 		self.train_dataset = train_dataset
 
-		self.train_loader = torch.utils.data.DataLoader(self.train_dataset, batch_size=conf["batch_size"])
+		self.train_loader = torch.utils.data.DataLoader(self.train_dataset, batch_size=conf["batch_size"], shuffle=True)
 
 	# 模型投毒(无范数裁剪)
 	def model_poison(self, diff):

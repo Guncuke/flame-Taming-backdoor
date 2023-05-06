@@ -1,7 +1,7 @@
 {
 	"malicious_round" :[4, 19, 34, 49],
 
-	"defense": "krum",
+	"defense": "flame",
 
 	"malicious_num" : 4,
 
@@ -9,11 +9,11 @@
 
 	"model_name" : "resnet18",
 
-	"data_distribution" : "iid",
+	"data_distribution" : "non_iid",
 	
 	"no_models" : 10,
 	
-	"type" : "fmnist",
+	"type" : "mnist",
 	
 	"global_epochs" : 51,
 	

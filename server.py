@@ -75,8 +75,8 @@ class Server(Model):
 			predict_bad = set(predict_bad)
 			true_bad = set(true_bad)
 			true_good = set(true_good)
-			tpr = len(true_good & predict_good) / len(predict_good)
-			tnr = len(true_bad & predict_bad) / len(predict_bad)
+			tnr = len(true_good & predict_good) / len(predict_good)
+			tpr = len(true_bad & predict_bad) / len(predict_bad)
 
 			# 2. 范数中值裁剪
 			for i, data in enumerate(clients_weight):

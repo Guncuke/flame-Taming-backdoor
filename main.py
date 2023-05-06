@@ -7,7 +7,35 @@ from client import *
 import datasets
 import copy
 import torch
+from torch.distributions.dirichlet import Dirichlet
+import numpy as np
 
+
+np.random.seed(42)
+
+def dirichlet_split_noniid(train_labels, alpha, n_clients):
+    '''
+    参数为alpha的Dirichlet分布将样本索引集合划分为n_clients个子集
+    '''
+    n_classes = train_labels.max() + 1
+    label_distribution = np.random.dirichlet([alpha] * n_clients, n_classes)
+    # (K, N) 类别标签分布矩阵X，记录每个类别划分到每个client去的比例
+
+    class_idcs = [np.argwhere(train_labels == y).flatten()
+                  for y in range(n_classes)]
+    # (K, ...) 记录K个类别对应的样本索引集合
+
+    client_idcs = [[] for _ in range(n_clients)]
+    # 记录N个client分别对应的样本索引集合
+    for c, fracs in zip(class_idcs, label_distribution):
+        # np.split按照比例将类别为k的样本划分为了N个子集
+        # i表示第i个client，idcs表示其对应的样本索引集合idcs
+        for i, idcs in enumerate(np.split(c, (np.cumsum(fracs)[:-1] * len(c)).astype(int))):
+            client_idcs[i] += [idcs]
+
+    client_idcs = [np.concatenate(idcs) for idcs in client_idcs]
+
+    return client_idcs
 
 if __name__ == '__main__':
 
@@ -24,10 +52,10 @@ if __name__ == '__main__':
 	random.seed(5)
 
 	# 实例化每一个客户端
-	for c in range(conf["no_models"]):
-
+	data_len = int(len(train_datasets) / conf['no_models'])
+	if conf["data_distribution"] == 'iid':
 		data_len = int(len(train_datasets) / conf['no_models'])
-		if conf["data_distribution"] == 'iid':
+		for c in range(conf["no_models"]):
 			subset_indices = range(c * data_len, (c + 1) * data_len)
 
 			# if c in conf['malicious_user']:
@@ -40,19 +68,26 @@ if __name__ == '__main__':
 
 			subset_indices = random.choices(subset_indices, k=data_len)
 			subset_dataset = Subset(train_datasets, subset_indices)
-		elif conf["data_distribution"] == 'non_iid':
-			labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+			client_model = copy.deepcopy(server.global_model)
+			clients.append(Client(conf, client_model, subset_dataset, c))
 
-			subset_indices = torch.where(train_datasets.targets == labels[c])[0]
+	elif conf["data_distribution"] == 'non_iid':
+		N_CLIENTS = conf["no_models"]
+		DIRICHLET_ALPHA = 0.5
+
+		input_sz, num_cls = train_datasets.data[0].shape[0], len(train_datasets.classes)
+
+		train_labels = np.array(train_datasets.targets)
+
+		# 我们让每个client不同label的样本数量不同，以此做到Non-IID划分
+		client_idcs = dirichlet_split_noniid(train_labels, alpha=DIRICHLET_ALPHA, n_clients=N_CLIENTS)
+
+		for c, subset_indices in enumerate(client_idcs):
 			subset_dataset = Subset(train_datasets, subset_indices)
+			client_model = copy.deepcopy(server.global_model)
+			clients.append(Client(conf, client_model, subset_dataset, c))
 
-		# if c in conf['malicious_user']:
-			# 	plot_E.plot_image(subset_dataset)
 
-		client_model = copy.deepcopy(server.global_model)
-
-		clients.append(Client(conf, client_model, subset_dataset, c))
-		
 	accuracy = []
 	accuracy_poison = []
 	losses = []
@@ -92,6 +127,7 @@ if __name__ == '__main__':
 		if e in conf['malicious_round']:
 			tprs.append(tpr)
 			tnrs.append(tnr)
+			print(tpr, tnr)
 
 		acc, acc_poison, loss = server.model_eval()
 		accuracy.append(acc)
