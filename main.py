@@ -57,15 +57,6 @@ if __name__ == '__main__':
 		data_len = int(len(train_datasets) / conf['no_models'])
 		for c in range(conf["no_models"]):
 			subset_indices = range(c * data_len, (c + 1) * data_len)
-
-			# if c in conf['malicious_user']:
-			# 	malicious = True
-			# 	# 加入后门数据
-			# 	if conf['type'] == 'mnist' or conf['type'] == 'fmnist':
-			# 		for i in range(c * data_len, c * data_len + data_len // 5):
-			# 			train_datasets.data[i][3:5, 3:5].fill_(255)
-			# 			train_datasets.targets[i].copy_(torch.tensor(conf['poison_num']))
-
 			subset_indices = random.choices(subset_indices, k=data_len)
 			subset_dataset = Subset(train_datasets, subset_indices)
 			client_model = copy.deepcopy(server.global_model)
@@ -86,6 +77,7 @@ if __name__ == '__main__':
 			subset_dataset = Subset(train_datasets, subset_indices)
 			client_model = copy.deepcopy(server.global_model)
 			clients.append(Client(conf, client_model, subset_dataset, c))
+
 
 
 	accuracy = []
@@ -141,6 +133,6 @@ if __name__ == '__main__':
 	print(tprs)
 	print(tnrs)
 	print('tpr:', tpr_num, 'tnr:', tnr_num)
-	save_data = {'losses': losses, 'acc': accuracy, 'acc_poison': accuracy_poison}
-	torch.save(save_data, f"{conf['type']}_{conf['malicious_num']}.pth")
+	# save_data = {'losses': losses, 'acc': accuracy, 'acc_poison': accuracy_poison}
+	# torch.save(save_data, f"{conf['type']}_{conf['malicious_num']}.pth")
 	plot_E.plot_loss_accuracy(losses, accuracy, conf['malicious_round'], accuracy_poison)

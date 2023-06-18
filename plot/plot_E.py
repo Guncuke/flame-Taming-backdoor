@@ -99,7 +99,7 @@ def plot_attack(name, round, acc1, acc2, acc3):
 
     plt.rcParams['font.sans-serif'] = ['SimHei']
     plt.rcParams['axes.unicode_minus'] = False
-    fig = plt.figure(figsize=(7, 4))
+    fig = plt.figure(figsize=(5, 2))
 
     plt.plot(acc1, color='green', label='本文算法', linestyle='solid', linewidth=2.5)
     plt.plot(acc2, color='orange', label='范数裁剪与弱差分隐私', linestyle='-.',linewidth=2.5)
@@ -116,24 +116,93 @@ def plot_attack(name, round, acc1, acc2, acc3):
     # 显示图形
     plt.show()
 
-if __name__ == '__main__':
+def plot_noniid(tnr, tpr):
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    # 横轴数据
+    fig = plt.figure(figsize=(5, 4))
 
-    # data_mnist_1 = torch.load('mnist_1_defense2.pth')
-    # data_mnist_4 = torch.load('mnist_4_defense_2.pth')
-    # data_fmnist_1 = torch.load('fmnist_1_defense2.pth')
-    # data_fmnist_4 = torch.load('fmnist_4_defense2.pth')
-    # data_cifar_1 = torch.load('cifar_1_defense2.pth')
-    # data_cifar_4 = torch.load('cifar_4_defense2.pth')
+    x = [4, 19, 34, 49]
 
-    data_mnist_4 = torch.load('cifar_1_defense2.pth')
-    data_mnist_4_2 = torch.load('cifar_4_defense2.pth')
-    # data_mnist_4_3 = torch.load('mnist_4_defense3.pth')
+    # 纵轴数据
+    y = [0, 0.5, 1]
 
-    # plot_attack('', [4, 19, 34, 49], data_mnist_4['acc_poison'], data_mnist_4_2['acc_poison'],data_mnist_4_3['acc_poison'])
+    # 绘制两条曲线
+    plt.plot(x, tpr, label='TPR', marker='s', markersize=15, color='g', linewidth=5)
+    plt.plot(x, tnr, label='TNR', marker='^', markersize=17, color='k', linewidth=5)
 
-    # plot_accuracy('C I F A R - 1 0', data_cifar_4['acc'], [4, 19, 34, 49], data_cifar_4['acc_poison'], data_cifar_1['acc_poison'])
-    # plot_accuracy('M N I S T', data_mnist_4['acc'], [4, 19, 34, 49], data_mnist_4['acc_poison'], data_mnist_1['acc_poison'])
-    # plot_accuracy('F M N I S T', data_fmnist_4['acc'], [4, 19, 34, 49], data_fmnist_4['acc_poison'], data_fmnist_1['acc_poison'])
 
-    print(data_mnist_4['acc'][49], data_mnist_4['acc_poison'][49])
-    print(data_mnist_4_2['acc'][49], data_mnist_4_2['acc_poison'][49])
+    plt.legend(prop={'size': 20})
+
+    # 设置横轴和纵轴的范围
+    plt.xlim(min(x) - 5, max(x) + 5)
+    plt.ylim(min(y) - 0.1, max(y) + 0.1)
+
+    # 设置横轴和纵轴的刻度标签
+    plt.xticks(x, ['4', '19', '34', '49'])
+    plt.yticks(y, ['0%', '50%', '100%'])
+    plt.xlabel('迭代次数')
+    # 显示图形
+    plt.show()
+
+
+def plot_tpr_tnr_ba(tnr, tpr, ba):
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    # 横轴数据
+    fig = plt.figure(figsize=(9, 5))
+
+    x = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
+
+    # 纵轴数据
+    y = [0, 0.5, 1]
+
+    # 绘制两条曲线
+    plt.plot(x, tpr, label='TPR', color='g', linewidth=4, linestyle='-.', marker='o', markersize=12)
+    plt.plot(x, tnr, label='TNR', color='k', linewidth=3, marker='*', markersize=15)
+    plt.plot(x, ba, label='BA', color='r', linewidth=3, linestyle='--', marker='D', markersize=10)
+
+
+    plt.legend(prop={'size': 15})
+
+    # 设置横轴和纵轴的范围
+    plt.xlim(min(x) - 0.5, max(x) + 0.5)
+    plt.ylim(min(y) - 0.1, max(y) + 0.1)
+
+    # 设置横轴和纵轴的刻度标签
+    plt.xticks(x, ['0.5', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5'])
+    plt.yticks(y, ['0%', '50%', '100%'])
+    plt.xlabel(r'$\alpha$', fontsize=20)
+    # 显示图形
+    plt.show()
+
+def plot_l2(l1, l2, l3):
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    # 横轴数据
+    fig = plt.figure(figsize=(10, 5))
+
+    x = list(range(20))
+
+    # 纵轴数据
+    y = [0, 1, 2, 3, 4]
+
+    # 绘制两条曲线
+    plt.plot(x, l1, label='MNIST', color='g', linewidth=4, linestyle='-.', marker='o', markersize=10)
+    plt.plot(x, l2, label='FMNIST', color='k', linewidth=3, marker='x', markersize=12)
+    plt.plot(x, l3, label='CIFAR10', color='orange', linewidth=3, linestyle='--', marker='D', markersize=10)
+
+
+    plt.legend(prop={'size': 20})
+
+    # 设置横轴和纵轴的范围
+    plt.xlim(min(x) - 0.5, max(x) + 0.5)
+    plt.ylim(min(y) - 0.1, max(y) + 0.1)
+
+    # 设置横轴和纵轴的刻度标签
+    plt.xticks(x, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19'])
+    plt.yticks(y, ['0', '1', '2', '3', '4'])
+    plt.xlabel('迭代轮次', fontsize=15)
+    plt.ylabel(r'$L_2$范数', fontsize=15)
+    # 显示图形
+    plt.show()

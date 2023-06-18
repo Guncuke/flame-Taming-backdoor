@@ -21,7 +21,7 @@ class Server(Model):
 			for name, param in self.global_model.state_dict().items():
 				c.local_model.state_dict()[name].copy_(param.clone())
 		
-	# TODO: 在聚合前，对客户端提交上来的模型参数进行筛选
+	# 在聚合前，对客户端提交上来的模型参数进行筛选
 	def model_sift(self, round, clients_weight, all_candidates, true_bad, true_good):
 		# 用来存储筛选后模型参数和
 		weight_accumulator = {}
@@ -54,7 +54,7 @@ class Server(Model):
 
 		if self.conf['defense'] == 'flame':
 
-			# 1. HDBSCAN余弦相似度聚类
+			# # 1. HDBSCAN余弦相似度聚类
 			clients_weight_total = clients_weight_total.double()
 			cluster = hdbscan.HDBSCAN(metric="cosine", algorithm="generic", min_cluster_size=num_clients//2+1, min_samples=1,allow_single_cluster=True)
 
@@ -71,12 +71,24 @@ class Server(Model):
 				else:
 					predict_bad.append(all_candidates[i])
 
+			print(cluster.labels_)
 			predict_good = set(predict_good)
 			predict_bad = set(predict_bad)
 			true_bad = set(true_bad)
 			true_good = set(true_good)
-			tnr = len(true_good & predict_good) / len(predict_good)
-			tpr = len(true_bad & predict_bad) / len(predict_bad)
+			if len(true_good) == 0 and len(predict_good) == 0:
+				tnr = 1
+			elif len(predict_good) == 0 and len(true_good)!=0:
+				tnr = 0
+			else:
+				tnr = len(true_good & predict_good) / len(predict_good)
+
+			if len(true_bad) == 0 and len(predict_bad) == 0:
+				tpr = 1
+			elif len(predict_bad) == 0 and len(true_bad)!=0:
+				tpr = 0
+			else:
+				tpr = len(true_bad & predict_bad) / len(predict_bad)
 
 			# 2. 范数中值裁剪
 			for i, data in enumerate(clients_weight):
@@ -120,7 +132,7 @@ class Server(Model):
 		num_in = 0
 		for i, data in enumerate(clients_weight):
 			if self.conf['defense'] == "flame":
-				if cluster.labels_[i] == 0:
+				# if cluster.labels_[i] == 0:
 					num_in += 1
 					for name, params in data.items():
 						weight_accumulator[name].add_(params)
@@ -135,6 +147,12 @@ class Server(Model):
 				num_in += 1
 				for name, params in data.items():
 					weight_accumulator[name].add_(params)
+
+		temp = torch.tensor([])
+		for name, data in self.global_model.named_parameters():
+			temp = torch.cat((temp, weight_accumulator[name].reshape(-1).cpu()))
+
+		print(temp.norm(2))
 
 		self.model_aggregate(weight_accumulator, num_in)
 

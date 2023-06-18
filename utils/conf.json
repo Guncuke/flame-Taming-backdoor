@@ -1,9 +1,9 @@
 {
-	"malicious_round" :[4, 19, 34, 49],
+	"malicious_round" :[0, 4, 19, 34, 49],
 
 	"defense": "flame",
 
-	"malicious_num" : 4,
+	"malicious_num" : 2,
 
 	"poison_num" : 8,
 
@@ -15,7 +15,7 @@
 	
 	"type" : "mnist",
 	
-	"global_epochs" : 51,
+	"global_epochs" : 20,
 	
 	"local_epochs" : 3,
 	
