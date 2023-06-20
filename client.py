@@ -79,7 +79,7 @@ class Client(object):
 			diff[name] = (data - pre_model[name])
 
 		if self.is_poison:
-		  self.model_poison(diff)
+		    self.model_poison(diff)
 
 		self.is_poison = False
 
