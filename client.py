@@ -78,8 +78,8 @@ class Client(object):
 		for name, data in self.local_model.state_dict().items():
 			diff[name] = (data - pre_model[name])
 
-		# if self.is_poison:
-		# 	self.model_poison(diff)
+		if self.is_poison:
+		  self.model_poison(diff)
 
 		self.is_poison = False
 
