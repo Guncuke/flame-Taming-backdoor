@@ -132,7 +132,7 @@ class Server(Model):
 		num_in = 0
 		for i, data in enumerate(clients_weight):
 			if self.conf['defense'] == "flame":
-				# if cluster.labels_[i] == 0:
+				if cluster.labels_[i] == 0:
 					num_in += 1
 					for name, params in data.items():
 						weight_accumulator[name].add_(params)
